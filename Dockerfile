@@ -9,7 +9,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir /app
 
-RUN docker-php-ext-install opcache && docker-php-ext-enable opcache
+RUN docker-php-ext-install opcache mysqli pdo pdo_mysql && docker-php-ext-enable opcache mysqli pdo pdo_mysql
 
 RUN curl -sSL https://github.com/krakjoe/parallel/archive/develop.zip -o /tmp/parallel.zip \
     && unzip /tmp/parallel.zip -d /tmp \
