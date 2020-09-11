@@ -20,3 +20,7 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
             - '../src/Tests/'
+
+    Linkorb\TableArchiver\Services\Supervisor:
+        arguments:
+            $workerFactory: !service {factory: [ 'Linkorb\TableArchiver\Factory\ArchiverWorkerFactory', 'createFactoryMethod' ]}

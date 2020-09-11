@@ -5,18 +5,26 @@ declare(strict_types=1);
 namespace Linkorb\TableArchiver\Manager;
 
 use DateTimeImmutable;
+use Linkorb\TableArchiver\Factory\QueryFactory;
+use Linkorb\TableArchiver\Services\Supervisor;
 use PDO;
 
-class TableArchiverManager
+class TableArchiver
 {
     public const YEAR = 0;
     public const YEAR_MONTH = 1;
     public const YEAR_MONTH_DAY = 2;
 
+    private QueryFactory $queryFactory;
+
+    private Supervisor $supervisor;
+
     private int $batchSize;
 
-    public function __construct(int $batchSize)
+    public function __construct(QueryFactory $queryFactory, Supervisor $supervisor, int $batchSize)
     {
+        $this->queryFactory = $queryFactory;
+        $this->supervisor = $supervisor;
         $this->batchSize = $batchSize;
     }
 
@@ -27,36 +35,41 @@ class TableArchiverManager
         string $stampColumnName,
         ?DateTimeImmutable $maxStamp
     ): void {
-        $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        $count = $pdo->query(
+            $this->queryFactory->buildCountQuery($tableName, $stampColumnName, $maxStamp),
+            PDO::FETCH_COLUMN
+        );
 
-        $offset = 0;
-        $pdo->exec('')
-
-        foreach (
-            $pdo->query(
-                $this->buildQuery($tableName, $stampColumnName, $offset, $this->batchSize, $maxStamp)
-            ) as $row
-        ) {
+        for ($offset = 0; $offset < $count; $offset += $this->batchSize) {
+            $this->supervisor->spawn(
+                [
+                    $pdo,
+                    $this->queryFactory->buildFetchQuery(
+                        $tableName,
+                        $stampColumnName,
+                        $offset,
+                        $this->batchSize,
+                        $maxStamp
+                    ),
+                    $archiveMode
+                ]
+            );
         }
 
-        while ($result->)
-    }
+        $this->supervisor->spawn(
+            [
+                $pdo,
+                $this->queryFactory->buildFetchQuery(
+                    $tableName,
+                    $stampColumnName,
+                    $offset,
+                    null,
+                    $maxStamp
+                ),
+                $archiveMode
+            ]
+        );
 
-    private function buildQuery(
-        string $tableName,
-        string $stampColumnName,
-        ?int $offset,
-        ?int $limit,
-        ?DateTimeImmutable $maxStamp
-    ): string {
-        $query = 'SELECT * FROM `%s`';
-        $params = [$tableName];
-
-        if ($maxStamp) {
-            $query .= ' WHERE `%s` < \'%s\'';
-            $params = [...$params, $stampColumnName, $maxStamp];
-        }
-
-        return sprintf($query, $params);
+        $this->supervisor->waitForFinish();
     }
 }

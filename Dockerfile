@@ -20,6 +20,8 @@ RUN curl -sSL https://github.com/krakjoe/parallel/archive/develop.zip -o /tmp/pa
     && make install \
     && rm -rf /tmp/parallel*
 
+RUN docker-php-ext-enable parallel
+
 RUN composer global require hirak/prestissimo
 
 WORKDIR /app
