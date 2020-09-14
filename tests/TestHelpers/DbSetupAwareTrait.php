@@ -18,6 +18,7 @@ trait DbSetupAwareTrait
             ['d', new DateTime('1999-01-01 00:13:56')],
             ['e', new DateTime('2020-08-02 11:13:37')],
             ['f', new DateTime('2020-08-03 09:57:34')],
+            ['g', new DateTime('2019-08-03 09:57:34')],
         ];
     }
 
@@ -37,9 +38,9 @@ trait DbSetupAwareTrait
         $pdo->exec(
             sprintf(
                 'CREATE table %s(
-             id INT( 11 ) AUTO_INCREMENT PRIMARY KEY,
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
              test VARCHAR( 255 ) NOT NULL, 
-             `%s` TIMESTAMP NOT NULL;',
+             `%s` TIMESTAMP NOT NULL)',
                 $this->getTableName(),
                 $this->getTimestampName()
             )

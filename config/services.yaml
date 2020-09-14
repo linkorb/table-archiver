@@ -24,3 +24,7 @@ services:
     Linkorb\TableArchiver\Services\Supervisor:
         arguments:
             $workerFactory: !service {factory: [ 'Linkorb\TableArchiver\Factory\ArchiverWorkerFactory', 'createFactoryMethod' ]}
+
+    Linkorb\TableArchiver\Services\OutputWriter:
+        arguments:
+            $basePath: '%kernel.project_dir%/output'

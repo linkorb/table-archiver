@@ -31,7 +31,7 @@ class Supervisor
     {
         while (count($this->futures) > 0) {
             foreach ($this->futures as $key => $future) {
-                if ($this->futures->done()) {
+                if ($future->done()) {
                     unset($this->futures[$key]);
                 }
             }

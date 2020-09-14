@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Linkorb\TableArchiver\Manager;
 
-use DateTimeImmutable;
+use BadFunctionCallException;
+use Linkorb\TableArchiver\Dto\ArchiveDto;
 use Linkorb\TableArchiver\Factory\QueryFactory;
 use Linkorb\TableArchiver\Services\Supervisor;
 use PDO;
@@ -28,30 +29,45 @@ class TableArchiver
         $this->batchSize = $batchSize;
     }
 
-    public function archive(
-        PDO $pdo,
-        string $tableName,
-        int $archiveMode,
-        string $stampColumnName,
-        ?DateTimeImmutable $maxStamp
-    ): void {
-        $count = $pdo->query(
-            $this->queryFactory->buildCountQuery($tableName, $stampColumnName, $maxStamp),
-            PDO::FETCH_COLUMN
-        );
+    public function archive(PDO $pdo, ArchiveDto $dto): void
+    {
+        if (false === $pdo->query('SELECT 1')->fetch()) {
+            throw new BadFunctionCallException('Something is wrong with your PDO connection');
+        }
 
-        for ($offset = 0; $offset < $count; $offset += $this->batchSize) {
+        $this->detectColumnType($pdo, $dto);
+
+        $count = $pdo->query(
+            $this->queryFactory->buildCountQuery(
+                $dto->tableName,
+                $dto->stampColumnName,
+                $dto->maxStamp,
+                $dto->isTimestamp
+            ),
+            PDO::FETCH_COLUMN,
+            0
+        )->fetch();
+
+        $this->spawnWorkers($pdo, $dto, (int) $count);
+
+        $this->supervisor->waitForFinish();
+    }
+
+    private function spawnWorkers(PDO $pdo, ArchiveDto $dto, int $count): void
+    {
+        for ($offset = 0; $offset < $count - $this->batchSize; $offset += $this->batchSize) {
             $this->supervisor->spawn(
                 [
                     $pdo,
                     $this->queryFactory->buildFetchQuery(
-                        $tableName,
-                        $stampColumnName,
+                        $dto->tableName,
+                        $dto->stampColumnName,
                         $offset,
                         $this->batchSize,
-                        $maxStamp
+                        $dto->maxStamp,
+                        $dto->isTimestamp
                     ),
-                    $archiveMode
+                    $dto
                 ]
             );
         }
@@ -60,16 +76,26 @@ class TableArchiver
             [
                 $pdo,
                 $this->queryFactory->buildFetchQuery(
-                    $tableName,
-                    $stampColumnName,
+                    $dto->tableName,
+                    $dto->stampColumnName,
                     $offset,
                     null,
-                    $maxStamp
+                    $dto->maxStamp,
+                    $dto->isTimestamp
                 ),
-                $archiveMode
+                $dto
             ]
         );
+    }
 
-        $this->supervisor->waitForFinish();
+    private function detectColumnType(PDO $pdo, ArchiveDto $dto): void
+    {
+        $testStampColumnValue = $pdo->query(
+            $this->queryFactory->buildTestQuery($dto->tableName, $dto->stampColumnName),
+            PDO::FETCH_COLUMN,
+            0
+        )->fetch();
+
+        $dto->isTimestamp = is_numeric($testStampColumnValue);
     }
 }
