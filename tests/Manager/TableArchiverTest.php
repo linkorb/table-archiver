@@ -19,34 +19,36 @@ class TableArchiverTest extends TestCase
     use DbSetupAwareTrait;
 
     private TableArchiver $manager;
-
     private PDO $pdo;
 
-    /**
-     * @var MockObject|Supervisor
-     */
+    /** @var MockObject|Supervisor */
     private MockObject $supervisor;
 
     public function setUp(): void
     {
         $this->pdo = $this->setUpDb();
         $this->supervisor = $this->createMock(Supervisor::class);
-        $this->manager = new TableArchiver(new QueryFactory(), $this->supervisor, 2);
+        $this->manager = $this->createPartialMock(TableArchiver::class, ['createPDO']);
+
+        $this->manager->__construct(new QueryFactory(), $this->supervisor, 2);
     }
 
     public function testIncorrectDbConnection()
     {
         $statement = $this->createConfiguredMock(PDOStatement::class, ['fetch' => false]);
         $pdo = $this->createConfiguredMock(PDO::class, ['query' => $statement]);
+        $this->manager->method('createPDO')->willReturn($pdo);
         $dto = new ArchiveDto();
 
         $this->expectExceptionMessage('Something is wrong with your PDO connection');
 
-        $this->manager->archive($pdo, $dto);
+        $this->manager->archive($dto);
     }
 
-    public function testAcrchive(): void
+    public function testArchiveTimestamp(): void
     {
+        $this->manager->method('createPDO')->willReturn($this->pdo);
+
         $dto = new ArchiveDto();
         $dto->archiveMode = TableArchiver::YEAR;
         $dto->stampColumnName = $this->getTimestampName();
@@ -56,12 +58,36 @@ class TableArchiverTest extends TestCase
             ->expects($this->exactly(4))
             ->method('spawn')
             ->withConsecutive(
-                [[$this->pdo, 'SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 0', $dto]],
-                [[$this->pdo, 'SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 2', $dto]],
-                [[$this->pdo, 'SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 4', $dto]],
-                [[$this->pdo, 'SELECT * FROM `' . $this->getTableName() . '` OFFSET 6', $dto]],
+                [['SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 0', $dto]],
+                [['SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 2', $dto]],
+                [['SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 4', $dto]],
+                [['SELECT * FROM `' . $this->getTableName() . '` OFFSET 6', $dto]],
             );
 
-        $this->manager->archive($this->pdo, $dto);
+        $this->manager->archive($dto);
+        $this->assertTrue($dto->isTimestamp);
+    }
+
+    public function testArchiveDateTime(): void
+    {
+        $this->manager->method('createPDO')->willReturn($this->pdo);
+
+        $dto = new ArchiveDto();
+        $dto->archiveMode = TableArchiver::YEAR_MONTH_DAY;
+        $dto->stampColumnName = $this->getDateTimeName();
+        $dto->tableName = $this->getTableName();
+
+        $this->supervisor
+            ->expects($this->exactly(4))
+            ->method('spawn')
+            ->withConsecutive(
+                [['SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 0', $dto]],
+                [['SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 2', $dto]],
+                [['SELECT * FROM `' . $this->getTableName() . '` LIMIT 2 OFFSET 4', $dto]],
+                [['SELECT * FROM `' . $this->getTableName() . '` OFFSET 6', $dto]],
+            );
+
+        $this->manager->archive($dto);
+        $this->assertFalse($dto->isTimestamp);
     }
 }

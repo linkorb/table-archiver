@@ -32,11 +32,11 @@ class OutputWriter
         $name = $this->getFileName($dateTime);
 
         if (!isset($this->fileResources[$name])) {
-            $fp = fopen($this->basePath . DIRECTORY_SEPARATOR . $name, 'a');
+            $fp = fopen($this->outputPath($name), 'a');
             $this->fileResources[$name] = $fp;
         }
 
-        fwrite($this->fileResources[$name], json_encode($row));
+        fwrite($this->fileResources[$name], json_encode($row) . "\n");
     }
 
     public function setArchiveMode(int $archiveMode): void
@@ -61,5 +61,10 @@ class OutputWriter
             default:
                 throw new Exception('Invalid archive mode');
         }
+    }
+
+    protected function outputPath(string $name): string
+    {
+        return $this->basePath . DIRECTORY_SEPARATOR . $name;
     }
 }

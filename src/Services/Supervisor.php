@@ -42,9 +42,6 @@ class Supervisor
     {
         $future = new Runtime(__DIR__ . '/../../vendor/autoload.php');
 
-        return $future->run(
-            $this->workerFactory->call($this),
-            $args
-        );
+        return $future->run(Closure::fromCallable($this->workerFactory->call($this)), $args);
     }
 }

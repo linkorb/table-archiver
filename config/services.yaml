@@ -23,7 +23,10 @@ services:
 
     Linkorb\TableArchiver\Services\Supervisor:
         arguments:
-            $workerFactory: !service {factory: [ 'Linkorb\TableArchiver\Factory\ArchiverWorkerFactory', 'createFactoryMethod' ]}
+            $workerFactory: !service
+                factory: [ 'Linkorb\TableArchiver\Factory\ArchiverWorkerFactory', 'createFactoryMethod' ]
+                arguments:
+                    - '@Linkorb\TableArchiver\Services\OutputWriter'
 
     Linkorb\TableArchiver\Services\OutputWriter:
         arguments:

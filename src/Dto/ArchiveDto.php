@@ -8,6 +8,9 @@ use DateTimeImmutable;
 
 class ArchiveDto
 {
+    public string $pdoDsn;
+    public string $pdoUsername;
+    public string $pdoPassword;
     public string $tableName;
     public int $archiveMode;
     public string $stampColumnName;

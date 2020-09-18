@@ -13,15 +13,29 @@ class ArchiverWorker
 {
     private OutputWriter $writer;
 
-    public function __call(PDO $pdo, string $query, ArchiveDto $dto): void
+    public function __construct(OutputWriter $writer)
     {
+        $this->writer = $writer;
+    }
+
+    public function __invoke(string $query, ArchiveDto $dto): void
+    {
+        $pdo = $this->createPDO($dto);
+
         $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
         $this->writer->setArchiveMode($dto->archiveMode);
 
-        foreach ($pdo->query($query)->fetch() as $row) {
+        $pdoStatement = $pdo->query($query);
+
+        while ($row = $pdoStatement->fetch(PDO::FETCH_ASSOC)) {
             $this->writer->write($row, $this->fetchDateTime($row, $dto));
         }
+    }
+
+    protected function createPDO(ArchiveDto $dto): PDO
+    {
+        return new PDO($dto->pdoDsn, $dto->pdoUsername, $dto->pdoPassword);
     }
 
     private function fetchDateTime(array $row, ArchiveDto $dto): DateTimeInterface
@@ -32,6 +46,6 @@ class ArchiverWorker
             return (new DateTimeImmutable())->setTimestamp($dateValue);
         }
 
-        return DateTimeImmutable::createFromFormat('Y-m-d h:i:s', $dateValue);
+        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateValue);
     }
 }

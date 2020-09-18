@@ -29,8 +29,10 @@ class TableArchiver
         $this->batchSize = $batchSize;
     }
 
-    public function archive(PDO $pdo, ArchiveDto $dto): void
+    public function archive(ArchiveDto $dto): void
     {
+        $pdo = $this->createPDO($dto);
+
         if (false === $pdo->query('SELECT 1')->fetch()) {
             throw new BadFunctionCallException('Something is wrong with your PDO connection');
         }
@@ -53,12 +55,16 @@ class TableArchiver
         $this->supervisor->waitForFinish();
     }
 
+    protected function createPDO(ArchiveDto $dto): PDO
+    {
+        return new PDO($dto->pdoDsn, $dto->pdoUsername, $dto->pdoPassword);
+    }
+
     private function spawnWorkers(PDO $pdo, ArchiveDto $dto, int $count): void
     {
         for ($offset = 0; $offset < $count - $this->batchSize; $offset += $this->batchSize) {
             $this->supervisor->spawn(
                 [
-                    $pdo,
                     $this->queryFactory->buildFetchQuery(
                         $dto->tableName,
                         $dto->stampColumnName,
@@ -74,7 +80,6 @@ class TableArchiver
 
         $this->supervisor->spawn(
             [
-                $pdo,
                 $this->queryFactory->buildFetchQuery(
                     $dto->tableName,
                     $dto->stampColumnName,

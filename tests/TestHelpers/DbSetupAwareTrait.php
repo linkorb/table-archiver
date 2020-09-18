@@ -32,6 +32,11 @@ trait DbSetupAwareTrait
         return 'timestamp';
     }
 
+    protected function getDateTimeName(): string
+    {
+        return 'datetime';
+    }
+
     private function setUpDb(): PDO
     {
         $pdo = new PDO('sqlite::memory:');
@@ -39,9 +44,11 @@ trait DbSetupAwareTrait
             sprintf(
                 'CREATE table %s(
              id INTEGER PRIMARY KEY AUTOINCREMENT,
-             test VARCHAR( 255 ) NOT NULL, 
-             `%s` TIMESTAMP NOT NULL)',
+             test VARCHAR( 255 ) NOT NULL,
+             `%s` DATETIME NOT NULL,
+             `%s` BIGINT NOT NULL)',
                 $this->getTableName(),
+                $this->getDateTimeName(),
                 $this->getTimestampName()
             )
         );
@@ -52,7 +59,12 @@ trait DbSetupAwareTrait
                 function (array $dbRow): string {
                     /** @var DateTime $dateTime */
                     [$test, $dateTime] = $dbRow;
-                    return sprintf('(\'%s\', \'%s\')', $test, $dateTime->format('Y-m-d H:i:s'));
+                    return sprintf(
+                        '(\'%s\', \'%s\', \'%s\')',
+                        $test,
+                        $dateTime->format('Y-m-d H:i:s'),
+                        $dateTime->getTimestamp()
+                    );
                 },
                 $this->getDbData()
             )
@@ -60,8 +72,9 @@ trait DbSetupAwareTrait
 
         $pdo->exec(
             sprintf(
-                'INSERT INTO %s (test, `%s`) VALUES %s;',
+                'INSERT INTO %s (test, `%s`, `%s`) VALUES %s;',
                 $this->getTableName(),
+                $this->getDateTimeName(),
                 $this->getTimestampName(),
                 $values
             )
