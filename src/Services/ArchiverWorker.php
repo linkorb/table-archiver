@@ -7,6 +7,7 @@ namespace Linkorb\TableArchiver\Services;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
+use parallel\Channel;
 use PDO;
 
 class ArchiverWorker
@@ -18,7 +19,7 @@ class ArchiverWorker
         $this->writer = $writer;
     }
 
-    public function __invoke(string $query, ArchiveDto $dto): void
+    public function __invoke(string $query, ArchiveDto $dto, Channel $channel): void
     {
         $pdo = $this->createPDO($dto);
 
@@ -28,9 +29,13 @@ class ArchiverWorker
 
         $pdoStatement = $pdo->query($query);
 
+        $rowsCount = 0;
         while ($row = $pdoStatement->fetch(PDO::FETCH_ASSOC)) {
+            ++$rowsCount;
             $this->writer->write($row, $this->fetchDateTime($row, $dto));
         }
+
+        $channel->send($rowsCount);
     }
 
     protected function createPDO(ArchiveDto $dto): PDO

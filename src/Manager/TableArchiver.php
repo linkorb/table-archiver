@@ -7,7 +7,9 @@ namespace Linkorb\TableArchiver\Manager;
 use BadFunctionCallException;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
 use Linkorb\TableArchiver\Factory\QueryFactory;
+use Linkorb\TableArchiver\Services\OutputArchiver;
 use Linkorb\TableArchiver\Services\Supervisor;
+use LogicException;
 use PDO;
 
 class TableArchiver
@@ -20,12 +22,19 @@ class TableArchiver
 
     private Supervisor $supervisor;
 
+    private OutputArchiver $outputArchiver;
+
     private int $batchSize;
 
-    public function __construct(QueryFactory $queryFactory, Supervisor $supervisor, int $batchSize)
-    {
+    public function __construct(
+        QueryFactory $queryFactory,
+        Supervisor $supervisor,
+        OutputArchiver $outputArchiver,
+        int $batchSize
+    ) {
         $this->queryFactory = $queryFactory;
         $this->supervisor = $supervisor;
+        $this->outputArchiver = $outputArchiver;
         $this->batchSize = $batchSize;
     }
 
@@ -50,9 +59,16 @@ class TableArchiver
             0
         )->fetch();
 
-        $this->spawnWorkers($pdo, $dto, (int) $count);
+        $this->spawnWorkers($pdo, $dto, (int)$count);
 
-        $this->supervisor->waitForFinish();
+        if ($count !== $this->supervisor->waitForFinish()) {
+            throw new LogicException('Number of found and processed rows isn\'t match');
+        }
+    }
+
+    public function finalize(): void
+    {
+        $this->outputArchiver->archive();
     }
 
     protected function createPDO(ArchiveDto $dto): PDO

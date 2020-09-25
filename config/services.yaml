@@ -31,3 +31,11 @@ services:
     Linkorb\TableArchiver\Services\OutputWriter:
         arguments:
             $basePath: '%kernel.project_dir%/output'
+
+    Linkorb\TableArchiver\Services\OutputArchiver:
+        arguments:
+            $basePath: '%kernel.project_dir%/output'
+
+    Linkorb\TableArchiver\Manager\TableArchiver:
+        arguments:
+            $batchSize: '%env(APP_THREAD_BATCH_SIZE)%'

@@ -4,8 +4,52 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "421321aba53467b6b48bd29dde233a4d",
+    "content-hash": "4bf9c447d3b8f0b7d7fc44ed8731a9a4",
     "packages": [
+        {
+            "name": "linkorb/connector",
+            "version": "v1.2.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/linkorb/connector.git",
+                "reference": "a6872994a45c6f2bf5c70ce3b00f5f4efe7f78f9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/linkorb/connector/zipball/a6872994a45c6f2bf5c70ce3b00f5f4efe7f78f9",
+                "reference": "a6872994a45c6f2bf5c70ce3b00f5f4efe7f78f9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Connector\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Joost Faassen",
+                    "email": "j.faassen@linkorb.com",
+                    "role": "Development"
+                }
+            ],
+            "description": "Database connection config resolver",
+            "homepage": "http://www.github.com/linkorb/connector",
+            "keywords": [
+                "connector",
+                "linkorb",
+                "pdo",
+                "php"
+            ],
+            "time": "2019-01-08T18:46:45+00:00"
+        },
         {
             "name": "psr/cache",
             "version": "1.0.1",
@@ -4378,6 +4422,8 @@
         "php": ">=7.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "ext-json": "*",
+        "ext-parallel": "*",
         "ext-pdo": "*"
     },
     "platform-dev": [],
