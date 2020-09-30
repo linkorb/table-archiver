@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Linkorb\TableArchiver\Manager;
 
 use BadFunctionCallException;
+use InvalidArgumentException;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
 use Linkorb\TableArchiver\Factory\QueryFactory;
 use Linkorb\TableArchiver\Services\OutputArchiver;
@@ -14,10 +15,6 @@ use PDO;
 
 class TableArchiver
 {
-    public const YEAR = 0;
-    public const YEAR_MONTH = 1;
-    public const YEAR_MONTH_DAY = 2;
-
     private QueryFactory $queryFactory;
 
     private Supervisor $supervisor;
@@ -38,10 +35,8 @@ class TableArchiver
         $this->batchSize = $batchSize;
     }
 
-    public function archive(ArchiveDto $dto): void
+    public function archive(PDO $pdo, ArchiveDto $dto): int
     {
-        $pdo = $this->createPDO($dto);
-
         if (false === $pdo->query('SELECT 1')->fetch()) {
             throw new BadFunctionCallException('Something is wrong with your PDO connection');
         }
@@ -59,24 +54,52 @@ class TableArchiver
             0
         )->fetch();
 
-        $this->spawnWorkers($pdo, $dto, (int)$count);
+        $this->spawnWorkers($dto, (int)$count);
 
         if ($count !== $this->supervisor->waitForFinish()) {
             throw new LogicException('Number of found and processed rows isn\'t match');
         }
+
+        return $count;
     }
 
-    public function finalize(): void
+    public function archiveExportedFiles(): void
     {
         $this->outputArchiver->archive();
     }
 
-    protected function createPDO(ArchiveDto $dto): PDO
+    public function flushArchived(PDO $pdo, ArchiveDto $dto, int $rowsArchived): void
     {
-        return new PDO($dto->pdoDsn, $dto->pdoUsername, $dto->pdoPassword);
+        $pdo->beginTransaction();
+
+        $count = $pdo->query(
+            $this->queryFactory->buildCountQuery(
+                $dto->tableName,
+                $dto->stampColumnName,
+                $dto->maxStamp,
+                $dto->isTimestamp
+            ),
+            PDO::FETCH_COLUMN,
+            0
+        )->fetch();
+
+        if ($count !== $rowsArchived) {
+            throw new InvalidArgumentException('Number of archived rows and marked for deletion mismatch');
+        }
+
+        $pdo->exec(
+            $this->queryFactory->buildDeleteQuery(
+                $dto->tableName,
+                $dto->stampColumnName,
+                $dto->maxStamp,
+                $dto->isTimestamp
+            )
+        );
+
+        $pdo->commit();
     }
 
-    private function spawnWorkers(PDO $pdo, ArchiveDto $dto, int $count): void
+    private function spawnWorkers(ArchiveDto $dto, int $count): void
     {
         for ($offset = 0; $offset < $count - $this->batchSize; $offset += $this->batchSize) {
             $this->supervisor->spawn(

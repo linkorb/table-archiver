@@ -6,7 +6,7 @@ namespace Linkorb\TableArchiver\Services;
 
 use DateTimeInterface;
 use Exception;
-use Linkorb\TableArchiver\Manager\TableArchiver;
+use Linkorb\TableArchiver\Dto\ArchiveDto;
 
 class OutputWriter
 {
@@ -47,11 +47,11 @@ class OutputWriter
     private function getFileName(DateTimeInterface $dateTime): string
     {
         switch ($this->archiveMode) {
-            case TableArchiver::YEAR:
+            case ArchiveDto::YEAR:
                 return sprintf('%04d.ndjson', $dateTime->format('Y'));
-            case TableArchiver::YEAR_MONTH:
+            case ArchiveDto::YEAR_MONTH:
                 return sprintf('%04d%02d.ndjson', $dateTime->format('Y'), $dateTime->format('m'));
-            case TableArchiver::YEAR_MONTH_DAY:
+            case ArchiveDto::YEAR_MONTH_DAY:
                 return sprintf(
                     '%04d%02d%02d.ndjson',
                     $dateTime->format('Y'),

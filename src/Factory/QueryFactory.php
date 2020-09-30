@@ -54,6 +54,23 @@ class QueryFactory
         return sprintf($query, ...$params);
     }
 
+    public function buildDeleteQuery(
+        string $tableName,
+        string $stampColumnName,
+        ?DateTimeImmutable $maxStamp,
+        bool $isTimestamp
+    ): string {
+        $query = 'DELETE FROM `%s`';
+        $params = [$tableName];
+
+        if ($maxStamp) {
+            $query .= ' WHERE `%s` < \'%s\'';
+            $params = [...$params, $stampColumnName, $isTimestamp ? $maxStamp->getTimestamp() : $maxStamp];
+        }
+
+        return sprintf($query, ...$params);
+    }
+
     public function buildTestQuery(string $tableName, string $stampColumnName): string
     {
         return sprintf('SELECT `%s` FROM `%s` WHERE `%s` IS NOT NULL', $stampColumnName, $tableName, $stampColumnName);

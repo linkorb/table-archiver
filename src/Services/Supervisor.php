@@ -20,10 +20,13 @@ class Supervisor
 
     private Channel $channel;
 
+    private Runtime $runtime;
+
     public function __construct(callable $workerFactory)
     {
         $this->workerFactory = Closure::fromCallable($workerFactory);
         $this->channel = new Channel();
+        $this->runtime  = new Runtime(__DIR__ . '/../../vendor/autoload.php');
     }
 
     public function spawn(array $args): void
@@ -37,7 +40,7 @@ class Supervisor
 
         while (count($this->futures) > 0) {
             foreach ($this->futures as $key => $future) {
-                if ($future->done()) {
+                if ($future->value()) {
                     $totalRows += $this->channel->recv();
                     unset($this->futures[$key]);
                 }
@@ -51,8 +54,7 @@ class Supervisor
 
     private function runWorker(array $args): Future
     {
-        $future = new Runtime(__DIR__ . '/../../vendor/autoload.php');
-
-        return $future->run(Closure::fromCallable($this->workerFactory->call($this)), [...$args, $this->channel]);
+        return $this->runtime
+            ->run(Closure::fromCallable($this->workerFactory->call($this)), [...$args, $this->channel]);
     }
 }

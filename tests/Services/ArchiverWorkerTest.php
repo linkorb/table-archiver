@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Linkorb\TableArchiver\Tests\Services;
 
 use Linkorb\TableArchiver\Dto\ArchiveDto;
-use Linkorb\TableArchiver\Manager\TableArchiver;
 use Linkorb\TableArchiver\Services\ArchiverWorker;
 use Linkorb\TableArchiver\Services\OutputWriter;
 use Linkorb\TableArchiver\Tests\TestHelpers\DbSetupAwareTrait;
@@ -39,7 +38,7 @@ class ArchiverWorkerTest extends TestCase
         $dto->isTimestamp = false;
         $dto->tableName = $this->getTableName();
         $dto->stampColumnName = $this->getDateTimeName();
-        $dto->archiveMode = TableArchiver::YEAR_MONTH_DAY;
+        $dto->archiveMode = ArchiveDto::YEAR_MONTH_DAY;
 
         $this->writer
             ->expects($this->exactly(2))

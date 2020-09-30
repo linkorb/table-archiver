@@ -8,9 +8,11 @@ use DateTimeImmutable;
 
 class ArchiveDto
 {
+    public const YEAR = 0;
+    public const YEAR_MONTH = 1;
+    public const YEAR_MONTH_DAY = 2;
+
     public string $pdoDsn;
-    public string $pdoUsername;
-    public string $pdoPassword;
     public string $tableName;
     public int $archiveMode;
     public string $stampColumnName;

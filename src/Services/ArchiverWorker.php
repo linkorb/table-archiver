@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Linkorb\TableArchiver\Services;
 
+use Connector\Connector;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
@@ -13,15 +14,17 @@ use PDO;
 class ArchiverWorker
 {
     private OutputWriter $writer;
+    private Connector $connector;
 
-    public function __construct(OutputWriter $writer)
+    public function __construct(OutputWriter $writer, Connector $connector)
     {
         $this->writer = $writer;
+        $this->connector = $connector;
     }
 
     public function __invoke(string $query, ArchiveDto $dto, Channel $channel): void
     {
-        $pdo = $this->createPDO($dto);
+        $pdo = $this->connector->getPdo($this->connector->getConfig($dto->pdoDsn));
 
         $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
@@ -36,11 +39,6 @@ class ArchiverWorker
         }
 
         $channel->send($rowsCount);
-    }
-
-    protected function createPDO(ArchiveDto $dto): PDO
-    {
-        return new PDO($dto->pdoDsn, $dto->pdoUsername, $dto->pdoPassword);
     }
 
     private function fetchDateTime(array $row, ArchiveDto $dto): DateTimeInterface

@@ -50,7 +50,7 @@ class TableArchiverTest extends TestCase
         $this->manager->method('createPDO')->willReturn($this->pdo);
 
         $dto = new ArchiveDto();
-        $dto->archiveMode = TableArchiver::YEAR;
+        $dto->archiveMode = ArchiveDto::YEAR;
         $dto->stampColumnName = $this->getTimestampName();
         $dto->tableName = $this->getTableName();
 
@@ -73,7 +73,7 @@ class TableArchiverTest extends TestCase
         $this->manager->method('createPDO')->willReturn($this->pdo);
 
         $dto = new ArchiveDto();
-        $dto->archiveMode = TableArchiver::YEAR_MONTH_DAY;
+        $dto->archiveMode = ArchiveDto::YEAR_MONTH_DAY;
         $dto->stampColumnName = $this->getDateTimeName();
         $dto->tableName = $this->getTableName();
 
