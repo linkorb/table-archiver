@@ -21,15 +21,22 @@ class QueryFactory
 
         if ($maxStamp) {
             $query .= ' WHERE `%s` < \'%s\'';
-            $params = [...$params, $stampColumnName, $isTimestamp ? $maxStamp->getTimestamp() : $maxStamp];
-        }
-
-        if (!is_null($limit)) {
-            $query .= ' LIMIT %d';
-            $params = [...$params, $limit];
+            $params = [
+                ...$params,
+                $stampColumnName,
+                $isTimestamp ? $maxStamp->getTimestamp() : $maxStamp->format('Y-m-d H:i:s'),
+            ];
         }
 
         if (!is_null($offset)) {
+            if (!is_null($limit)) {
+                $query .= ' LIMIT %d';
+                $params = [...$params, $limit];
+            } else {
+                $query .= ' LIMIT %d';
+                $params = [...$params, 12340283492834];
+            }
+
             $query .= ' OFFSET %d';
             $params = [...$params, $offset];
         }
@@ -48,7 +55,11 @@ class QueryFactory
 
         if ($maxStamp) {
             $query .= ' WHERE `%s` < \'%s\'';
-            $params = [...$params, $stampColumnName, $isTimestamp ? $maxStamp->getTimestamp() : $maxStamp];
+            $params = [
+                ...$params,
+                $stampColumnName,
+                $isTimestamp ? $maxStamp->getTimestamp() : $maxStamp->format('Y-m-d H:i:s'),
+            ];
         }
 
         return sprintf($query, ...$params);
@@ -65,7 +76,11 @@ class QueryFactory
 
         if ($maxStamp) {
             $query .= ' WHERE `%s` < \'%s\'';
-            $params = [...$params, $stampColumnName, $isTimestamp ? $maxStamp->getTimestamp() : $maxStamp];
+            $params = [
+                ...$params,
+                $stampColumnName,
+                $isTimestamp ? $maxStamp->getTimestamp() : $maxStamp->format('Y-m-d H:i:s'),
+            ];
         }
 
         return sprintf($query, ...$params);

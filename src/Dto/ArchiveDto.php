@@ -17,5 +17,12 @@ class ArchiveDto
     public int $archiveMode;
     public string $stampColumnName;
     public bool $isTimestamp = false;
-    public ?DateTimeImmutable $maxStamp = null;
+    public ?string $maxStamp = null;
+
+    public function getStampDateTime(): ?DateTimeImmutable
+    {
+        return $this->maxStamp !== null ?
+            DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $this->maxStamp) :
+            $this->maxStamp;
+    }
 }

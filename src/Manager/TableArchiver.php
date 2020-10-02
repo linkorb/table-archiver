@@ -43,18 +43,18 @@ class TableArchiver
 
         $this->detectColumnType($pdo, $dto);
 
-        $count = $pdo->query(
+        $count = (int)$pdo->query(
             $this->queryFactory->buildCountQuery(
                 $dto->tableName,
                 $dto->stampColumnName,
-                $dto->maxStamp,
+                $dto->getStampDateTime(),
                 $dto->isTimestamp
             ),
             PDO::FETCH_COLUMN,
             0
         )->fetch();
 
-        $this->spawnWorkers($dto, (int)$count);
+        $this->spawnWorkers($dto, $count);
 
         if ($count !== $this->supervisor->waitForFinish()) {
             throw new LogicException('Number of found and processed rows isn\'t match');
@@ -72,11 +72,11 @@ class TableArchiver
     {
         $pdo->beginTransaction();
 
-        $count = $pdo->query(
+        $count = (int)$pdo->query(
             $this->queryFactory->buildCountQuery(
                 $dto->tableName,
                 $dto->stampColumnName,
-                $dto->maxStamp,
+                $dto->getStampDateTime(),
                 $dto->isTimestamp
             ),
             PDO::FETCH_COLUMN,
@@ -91,7 +91,7 @@ class TableArchiver
             $this->queryFactory->buildDeleteQuery(
                 $dto->tableName,
                 $dto->stampColumnName,
-                $dto->maxStamp,
+                $dto->getStampDateTime(),
                 $dto->isTimestamp
             )
         );
@@ -109,7 +109,7 @@ class TableArchiver
                         $dto->stampColumnName,
                         $offset,
                         $this->batchSize,
-                        $dto->maxStamp,
+                        $dto->getStampDateTime(),
                         $dto->isTimestamp
                     ),
                     $dto
@@ -124,7 +124,7 @@ class TableArchiver
                     $dto->stampColumnName,
                     $offset,
                     null,
-                    $dto->maxStamp,
+                    $dto->getStampDateTime(),
                     $dto->isTimestamp
                 ),
                 $dto

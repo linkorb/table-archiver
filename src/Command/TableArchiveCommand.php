@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Linkorb\TableArchiver\Command;
 
 use Connector\Connector;
-use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
 use Linkorb\TableArchiver\Manager\TableArchiver;
@@ -55,12 +55,14 @@ final class TableArchiveCommand extends Command
         $this->archiver->archiveExportedFiles();
 
         $helper = $this->getHelper('question');
-        $question = new ConfirmationQuestion('All records archived. Do you want to proceed with removal?', false);
+        $question = new ConfirmationQuestion('All records archived. Do you want to proceed with removal? (y/N)', false);
 
-        $output->write(sprintf('<green>%d records have been processed</green>', $count));
-        if (!$helper->ask($input, $output, $question)) {
+        $output->writeln(sprintf('<fg=green>%d records have been processed</>', $count));
+        if ($helper->ask($input, $output, $question)) {
             $this->archiver->flushArchived($pdo, $dto, $count);
         }
+
+        return 0;
     }
 
     private function createDto(InputInterface $input, OutputInterface $output): ArchiveDto
@@ -84,12 +86,14 @@ final class TableArchiveCommand extends Command
         $dto->stampColumnName = $input->getArgument('columnName');
 
         $datetime = $input->getArgument('maxStamp') ?
-            DateTime::createFromFormat('Ymd', $input->getArgument('maxStamp')) : null;
+            DateTimeImmutable::createFromFormat('Ymd', $input->getArgument('maxStamp')) : null;
         if ($datetime === false) {
             $output->write('<error>Incorrect max stamp passed</error>');
             return -1;
         }
-        $dto->maxStamp = $datetime instanceof DateTimeInterface ? $datetime->setTime(0, 0) : $datetime;
+        $dto->maxStamp = $datetime instanceof DateTimeInterface ?
+            $datetime->setTime(23, 59, 59, 999999)->format('Y-m-d H:i:s') :
+            $datetime;
 
         return $dto;
     }

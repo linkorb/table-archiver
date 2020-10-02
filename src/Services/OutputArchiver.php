@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Linkorb\TableArchiver\Services;
 
+use Exception;
+
 class OutputArchiver
 {
     private string $basePath;
@@ -27,6 +29,7 @@ class OutputArchiver
             }
 
             $this->gzCompressFile($filePath);
+            unlink($filePath);
         }
 
         closedir($dh);

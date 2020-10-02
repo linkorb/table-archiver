@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Linkorb\TableArchiver\Services;
 
 use Closure;
+use Linkorb\TableArchiver\Dto\ArchiveDto;
+use Linkorb\TableArchiver\Factory\ArchiverWorkerFactory;
 use parallel\Channel;
 use parallel\Future;
 use parallel\Runtime;
@@ -38,23 +40,26 @@ class Supervisor
     {
         $totalRows = 0;
 
-        while (count($this->futures) > 0) {
-            foreach ($this->futures as $key => $future) {
-                if ($future->value()) {
-                    $totalRows += $this->channel->recv();
-                    unset($this->futures[$key]);
-                }
-            }
+        foreach ($this->futures as $future) {
+            $totalRows += $this->channel->recv();
+            $future->value();
         }
 
         $this->channel->close();
+        $this->futures = [];
 
         return $totalRows;
     }
 
     private function runWorker(array $args): Future
     {
-        return $this->runtime
-            ->run(Closure::fromCallable($this->workerFactory->call($this)), [...$args, $this->channel]);
+        $workerFactory = $this->workerFactory;
+
+        return $this->runtime->run(
+            function (string $query, ArchiveDto $dto, Channel $channel) use ($workerFactory) {
+                return ($workerFactory->call(new ArchiverWorkerFactory()))($query, $dto, $channel);
+            },
+            [...$args, $this->channel]
+        );
     }
 }
