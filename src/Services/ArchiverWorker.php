@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Linkorb\TableArchiver\Services;
 
 use Connector\Connector;
-use DateTimeImmutable;
-use DateTimeInterface;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
 use parallel\Channel;
 use PDO;
@@ -35,20 +33,9 @@ class ArchiverWorker
         $rowsCount = 0;
         while ($row = $pdoStatement->fetch(PDO::FETCH_ASSOC)) {
             ++$rowsCount;
-            $this->writer->write($row, $this->fetchDateTime($row, $dto));
+            $this->writer->write($row, $dto);
         }
 
         $channel->send($rowsCount);
-    }
-
-    private function fetchDateTime(array $row, ArchiveDto $dto): DateTimeInterface
-    {
-        $dateValue = $row[$dto->stampColumnName];
-
-        if ($dto->isTimestamp) {
-            return (new DateTimeImmutable())->setTimestamp($dateValue);
-        }
-
-        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateValue);
     }
 }

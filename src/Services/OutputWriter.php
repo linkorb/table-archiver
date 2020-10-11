@@ -7,12 +7,13 @@ namespace Linkorb\TableArchiver\Services;
 use DateTimeInterface;
 use Exception;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
+use SplFileObject;
 
 class OutputWriter
 {
     private string $basePath;
     private int $archiveMode;
-    /** @var resource[] */
+    /** @var SplFileObject[] */
     private array $fileResources = [];
 
     public function __construct(string $basePath)
@@ -22,21 +23,22 @@ class OutputWriter
 
     public function __destruct()
     {
-        foreach ($this->fileResources as $fileResource) {
-            fclose($fileResource);
+        foreach ($this->fileResources as $key => $fileResource) {
+            unset($this->fileResources[$key]);
         }
     }
 
-    public function write(array $row, DateTimeInterface $dateTime): void
+    public function write(array $row, ArchiveDto $dto): void
     {
+        $dateTime = DateTimeHelper::fetchDateTime($row, $dto);
         $name = $this->getFileName($dateTime);
 
         if (!isset($this->fileResources[$name])) {
-            $fp = fopen($this->outputPath($name), 'a');
+            $fp = new SplFileObject($this->outputPath($name), 'r+');
             $this->fileResources[$name] = $fp;
         }
 
-        fwrite($this->fileResources[$name], json_encode($row) . "\n");
+        $this->fileResources[$name]->fwrite(json_encode($row) . "\n");
     }
 
     public function setArchiveMode(int $archiveMode): void
@@ -66,5 +68,11 @@ class OutputWriter
     protected function outputPath(string $name): string
     {
         return $this->basePath . DIRECTORY_SEPARATOR . $name;
+    }
+
+    private function getLinePosition(SplFileObject $fileObject, DateTimeInterface $dateTime): int
+    {
+        $length = count($fileObject);
+
     }
 }

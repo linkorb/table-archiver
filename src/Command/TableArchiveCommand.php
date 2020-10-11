@@ -41,8 +41,16 @@ final class TableArchiveCommand extends Command
                 InputArgument::REQUIRED,
                 'Date range for which archived cluster will be created. Allowed values: YEAR, YEAR_MONTH, YEAR_MONTH_DAY'
             )
-            ->addArgument('columnName', InputArgument::REQUIRED, 'Column which contains date information')
-            ->addArgument('maxStamp', InputArgument::OPTIONAL, 'Archive records which older than specified date');
+            ->addArgument(
+                'columnName',
+                InputArgument::REQUIRED,
+                'Column which contains date information. It may be a date, datetime or int (unix timestamp) column, this is auto-detected'
+            )
+            ->addArgument(
+                'maxStamp',
+                InputArgument::OPTIONAL,
+                'Archive records which older than specified date. Data newer than this date is not archived, and kept in the database'
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
