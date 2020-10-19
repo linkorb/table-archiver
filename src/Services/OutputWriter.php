@@ -34,7 +34,7 @@ class OutputWriter
         $name = $this->getFileName($dateTime);
 
         if (!isset($this->fileResources[$name])) {
-            $fp = new SplFileObject($this->outputPath($name), 'r+');
+            $fp = new SplFileObject($this->outputPath($name), 'a');
             $this->fileResources[$name] = $fp;
         }
 
@@ -68,11 +68,5 @@ class OutputWriter
     protected function outputPath(string $name): string
     {
         return $this->basePath . DIRECTORY_SEPARATOR . $name;
-    }
-
-    private function getLinePosition(SplFileObject $fileObject, DateTimeInterface $dateTime): int
-    {
-        $length = count($fileObject);
-
     }
 }

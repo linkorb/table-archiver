@@ -23,11 +23,11 @@ services:
 
     Linkorb\TableArchiver\Services\Supervisor:
         arguments:
-            $workerFactory: !service
+            $processingWorkerFactory: !service
                 factory: [ '@Linkorb\TableArchiver\Factory\ArchiverWorkerFactory', 'createFactoryMethod' ]
                 arguments:
                     - '@Linkorb\TableArchiver\Services\OutputWriter'
-                    - '@Connector\Connector'
+            $threadsNumber: '%env(APP_THREADS_NUMBER)%'
 
     Linkorb\TableArchiver\Services\OutputWriter:
         arguments:
@@ -39,6 +39,6 @@ services:
 
     Linkorb\TableArchiver\Manager\TableArchiver:
         arguments:
-            $batchSize: '%env(APP_THREAD_BATCH_SIZE)%'
+            $processingThreadsNumber: '%env(APP_THREADS_NUMBER)%'
 
     Connector\Connector:

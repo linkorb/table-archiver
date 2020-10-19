@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Linkorb\TableArchiver\Manager;
 
-use BadFunctionCallException;
-use InvalidArgumentException;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
 use Linkorb\TableArchiver\Factory\QueryFactory;
 use Linkorb\TableArchiver\Services\OutputArchiver;
@@ -21,25 +19,23 @@ class TableArchiver
 
     private OutputArchiver $outputArchiver;
 
-    private int $batchSize;
+    private int $processingThreadsNumber;
 
     public function __construct(
         QueryFactory $queryFactory,
         Supervisor $supervisor,
         OutputArchiver $outputArchiver,
-        int $batchSize
+        int $processingThreadsNumber
     ) {
         $this->queryFactory = $queryFactory;
         $this->supervisor = $supervisor;
         $this->outputArchiver = $outputArchiver;
-        $this->batchSize = $batchSize;
+        $this->processingThreadsNumber = $processingThreadsNumber;
     }
 
     public function archive(PDO $pdo, ArchiveDto $dto): int
     {
-        if (false === $pdo->query('SELECT 1')->fetch()) {
-            throw new BadFunctionCallException('Something is wrong with your PDO connection');
-        }
+        $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
         $this->detectColumnType($pdo, $dto);
 
@@ -54,10 +50,21 @@ class TableArchiver
             0
         )->fetch();
 
-        $this->spawnWorkers($dto, $count);
+        $this->spawnWorkers($dto);
 
-        if ($count !== $this->supervisor->waitForFinish()) {
-            throw new LogicException('Number of found and processed rows isn\'t match');
+        $pdoStatement = $pdo->query($this->queryFactory->buildFetchQuery(
+            $dto->tableName,
+            $dto->stampColumnName,
+            $dto->getStampDateTime(),
+            $dto->isTimestamp
+        ));
+
+        while ($row = $pdoStatement->fetch(PDO::FETCH_ASSOC)) {
+            $this->supervisor->delegate($row);
+        }
+
+        if ($count !== $this->supervisor->terminateThreads()) {
+            throw new LogicException('Number of found and processed rows aren\'t match');
         }
 
         return $count;
@@ -68,25 +75,8 @@ class TableArchiver
         $this->outputArchiver->archive();
     }
 
-    public function flushArchived(PDO $pdo, ArchiveDto $dto, int $rowsArchived): void
+    public function flushArchived(PDO $pdo, ArchiveDto $dto): void
     {
-        $pdo->beginTransaction();
-
-        $count = (int)$pdo->query(
-            $this->queryFactory->buildCountQuery(
-                $dto->tableName,
-                $dto->stampColumnName,
-                $dto->getStampDateTime(),
-                $dto->isTimestamp
-            ),
-            PDO::FETCH_COLUMN,
-            0
-        )->fetch();
-
-        if ($count !== $rowsArchived) {
-            throw new InvalidArgumentException('Number of archived rows and marked for deletion mismatch');
-        }
-
         $pdo->exec(
             $this->queryFactory->buildDeleteQuery(
                 $dto->tableName,
@@ -95,41 +85,13 @@ class TableArchiver
                 $dto->isTimestamp
             )
         );
-
-        $pdo->commit();
     }
 
-    private function spawnWorkers(ArchiveDto $dto, int $count): void
+    private function spawnWorkers(ArchiveDto $dto): void
     {
-        for ($offset = 0; $offset < $count - $this->batchSize; $offset += $this->batchSize) {
-            $this->supervisor->spawn(
-                [
-                    $this->queryFactory->buildFetchQuery(
-                        $dto->tableName,
-                        $dto->stampColumnName,
-                        $offset,
-                        $this->batchSize,
-                        $dto->getStampDateTime(),
-                        $dto->isTimestamp
-                    ),
-                    $dto
-                ]
-            );
+        for ($i = 0; $i < $this->processingThreadsNumber; $i++) {
+            $this->supervisor->spawnProcessing([$dto]);
         }
-
-        $this->supervisor->spawn(
-            [
-                $this->queryFactory->buildFetchQuery(
-                    $dto->tableName,
-                    $dto->stampColumnName,
-                    $offset,
-                    null,
-                    $dto->getStampDateTime(),
-                    $dto->isTimestamp
-                ),
-                $dto
-            ]
-        );
     }
 
     private function detectColumnType(PDO $pdo, ArchiveDto $dto): void

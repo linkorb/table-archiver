@@ -6,7 +6,6 @@ namespace Linkorb\TableArchiver\Services;
 
 use Closure;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
-use Linkorb\TableArchiver\Factory\ArchiverWorkerFactory;
 use parallel\Channel;
 use parallel\Future;
 use parallel\Runtime;
@@ -16,48 +15,51 @@ class Supervisor
     /**
      * @var Future[]
      */
-    private array $futures = [];
+    private array $processingFutures = [];
 
-    private Closure $workerFactory;
+    private Closure $processingWorkerFactory;
 
     private Channel $channel;
 
     private Runtime $runtime;
 
-    public function __construct(callable $workerFactory)
+    public function __construct(callable $processingWorkerFactory, int $threadsNumber)
     {
-        $this->workerFactory = Closure::fromCallable($workerFactory);
-        $this->channel = new Channel();
-        $this->runtime  = new Runtime(__DIR__ . '/../../vendor/autoload.php');
+        $this->processingWorkerFactory = Closure::fromCallable($processingWorkerFactory);
+        $this->channel = Channel::make('data_transfer', $threadsNumber);
+        $this->runtime = new Runtime(__DIR__ . '/../../vendor/autoload.php');
     }
 
-    public function spawn(array $args): void
+    public function spawnProcessing(array $args): void
     {
-        $this->futures[] = $this->runWorker($args);
+        $this->processingFutures[] = $this->runProcessingWorker($args);
     }
 
-    public function waitForFinish(): int
+    public function delegate(array $row): void
     {
-        $totalRows = 0;
+        $this->channel->send($row);
+    }
 
-        foreach ($this->futures as $future) {
-            $totalRows += $this->channel->recv();
-            $future->value();
+    public function terminateThreads(): int
+    {
+        $this->channel->close();
+
+        $processedRows = 0;
+
+        foreach ($this->processingFutures as $future) {
+            $processedRows += $future->value();
         }
 
-        $this->channel->close();
-        $this->futures = [];
-
-        return $totalRows;
+        return $processedRows;
     }
 
-    private function runWorker(array $args): Future
+    private function runProcessingWorker(array $args): Future
     {
-        $workerFactory = $this->workerFactory;
+        $workerFactory = $this->processingWorkerFactory;
 
         return $this->runtime->run(
-            function (string $query, ArchiveDto $dto, Channel $channel) use ($workerFactory) {
-                return ($workerFactory->call(new ArchiverWorkerFactory()))($query, $dto, $channel);
+            function (ArchiveDto $dto, Channel $channel) use ($workerFactory) {
+                return ($workerFactory())($dto, $channel);
             },
             [...$args, $this->channel]
         );

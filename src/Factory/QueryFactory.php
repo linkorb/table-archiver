@@ -11,8 +11,6 @@ class QueryFactory
     public function buildFetchQuery(
         string $tableName,
         string $stampColumnName,
-        ?int $offset,
-        ?int $limit,
         ?DateTimeImmutable $maxStamp,
         bool $isTimestamp
     ): string {
@@ -28,18 +26,8 @@ class QueryFactory
             ];
         }
 
-        if (!is_null($offset)) {
-            if (!is_null($limit)) {
-                $query .= ' LIMIT %d';
-                $params = [...$params, $limit];
-            } else {
-                $query .= ' LIMIT %d';
-                $params = [...$params, 12340283492834];
-            }
-
-            $query .= ' OFFSET %d';
-            $params = [...$params, $offset];
-        }
+        $query .= ' ORDER BY `%s` ASC';
+        $params = [...$params, $stampColumnName];
 
         return sprintf($query, ...$params);
     }

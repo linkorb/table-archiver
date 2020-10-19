@@ -59,6 +59,7 @@ final class TableArchiveCommand extends Command
 
         $pdo = $this->connector->getPdo($this->connector->getConfig($dto->pdoDsn));
 
+        $pdo->beginTransaction();
         $count = $this->archiver->archive($pdo, $dto);
         $this->archiver->archiveExportedFiles();
 
@@ -67,8 +68,9 @@ final class TableArchiveCommand extends Command
 
         $output->writeln(sprintf('<fg=green>%d records have been processed</>', $count));
         if ($helper->ask($input, $output, $question)) {
-            $this->archiver->flushArchived($pdo, $dto, $count);
+            $this->archiver->flushArchived($pdo, $dto);
         }
+        $pdo->commit();
 
         return 0;
     }

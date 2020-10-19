@@ -20,6 +20,8 @@ See `./bin/console linkorb:table:archive --help` for more info
 
 All gzipped [ndjson](http://ndjson.org/) files can be found under `./output` directory
 
+If you want to change threads number you can do that easily by changing `APP_THREADS_NUMBER` in `.env`
+
 ### Example:
     
     ./bin/console linkorb:table:archive mysql://root:root@127.0.0.1:3306/test target_table YEAR_MONTH_DAY timestamp 20200101
