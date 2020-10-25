@@ -7,6 +7,7 @@ namespace Linkorb\TableArchiver\Command;
 use Connector\Connector;
 use DateTimeImmutable;
 use DateTimeInterface;
+use InvalidArgumentException;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
 use Linkorb\TableArchiver\Manager\TableArchiver;
 use Linkorb\TableArchiver\Services\OutputWriter;
@@ -16,6 +17,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Throwable;
 
 final class TableArchiveCommand extends Command
 {
@@ -66,7 +68,12 @@ final class TableArchiveCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $dto = $this->createDto($input, $output);
+        try {
+            $dto = $this->createDto($input, $output);
+        } catch (Throwable $e) {
+            $output->write(sprintf('<error>%s</error>', $e->getMessage()));
+            return -1;
+        }
 
         $pdo = $this->connector->getPdo($this->connector->getConfig($dto->pdoDsn));
 
@@ -103,8 +110,7 @@ final class TableArchiveCommand extends Command
         $dto->tableName = $input->getArgument('tableName');
 
         if (!isset($archiveModeMap[$input->getArgument('mode')])) {
-            $output->write('<error>This archive mode is not allowed</error>');
-            return -1;
+            throw new InvalidArgumentException('This archive mode is not allowed');
         }
 
         $dto->archiveMode = $archiveModeMap[$input->getArgument('mode')];
@@ -113,8 +119,7 @@ final class TableArchiveCommand extends Command
         $datetime = $input->getArgument('maxStamp') ?
             DateTimeImmutable::createFromFormat('Ymd', $input->getArgument('maxStamp')) : null;
         if ($datetime === false) {
-            $output->write('<error>Incorrect max stamp passed</error>');
-            return -1;
+            throw new InvalidArgumentException('Incorrect max stamp passed');
         }
         $dto->maxStamp = $datetime instanceof DateTimeInterface ?
             $datetime->setTime(23, 59, 59, 999999)->format('Y-m-d H:i:s') :

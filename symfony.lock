@@ -32,6 +32,12 @@
     "phpspec/prophecy": {
         "version": "1.11.1"
     },
+    "phpstan/phpstan": {
+        "version": "0.12.51"
+    },
+    "phpstan/phpstan-symfony": {
+        "version": "0.12.10"
+    },
     "phpunit/php-code-coverage": {
         "version": "9.1.7"
     },
@@ -109,6 +115,9 @@
     "sebastian/object-reflector": {
         "version": "2.0.2"
     },
+    "sebastian/phpcpd": {
+        "version": "6.0.2"
+    },
     "sebastian/recursion-context": {
         "version": "4.0.2"
     },
@@ -120,6 +129,27 @@
     },
     "sebastian/version": {
         "version": "3.0.1"
+    },
+    "sensiolabs/security-checker": {
+        "version": "4.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "master",
+            "version": "4.0",
+            "ref": "160c9b600564faa1224e8f387d49ef13ceb8b793"
+        },
+        "files": [
+            "config/packages/security_checker.yaml"
+        ]
+    },
+    "squizlabs/php_codesniffer": {
+        "version": "3.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "master",
+            "version": "3.0",
+            "ref": "0dc9cceda799fd3a08b96987e176a261028a3709"
+        }
     },
     "symfony/cache": {
         "version": "v5.1.4"
@@ -197,11 +227,20 @@
             "src/Kernel.php"
         ]
     },
+    "symfony/http-client": {
+        "version": "v5.1.7"
+    },
+    "symfony/http-client-contracts": {
+        "version": "v2.3.1"
+    },
     "symfony/http-foundation": {
         "version": "v5.1.4"
     },
     "symfony/http-kernel": {
         "version": "v5.1.4"
+    },
+    "symfony/mime": {
+        "version": "v5.1.7"
     },
     "symfony/phpunit-bridge": {
         "version": "4.3",
@@ -220,6 +259,9 @@
     },
     "symfony/polyfill-intl-grapheme": {
         "version": "v1.18.1"
+    },
+    "symfony/polyfill-intl-idn": {
+        "version": "v1.19.0"
     },
     "symfony/polyfill-intl-normalizer": {
         "version": "v1.18.1"
@@ -264,6 +306,9 @@
     },
     "theseer/tokenizer": {
         "version": "1.2.0"
+    },
+    "wapmorgan/php-code-fixer": {
+        "version": "2.0.24"
     },
     "webmozart/assert": {
         "version": "1.9.1"
