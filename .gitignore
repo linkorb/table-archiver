@@ -24,3 +24,5 @@
 output/*
 
 !.gitkeep
+
+node_modules

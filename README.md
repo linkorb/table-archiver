@@ -29,3 +29,7 @@ option. Be aware that this setting noticeable affects performance.
 ### Example:
     
     ./bin/console linkorb:table:archive mysql://root:root@127.0.0.1:3306/test target_table YEAR_MONTH_DAY timestamp 20200101
+
+## Git hooks
+
+There are some git hooks under `.hooks` directory. Feel free to copy & adjust & use them
