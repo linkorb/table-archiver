@@ -15,6 +15,7 @@ class OutputWriter
     private int $archiveMode;
     /** @var SplFileObject[] */
     private array $fileResources = [];
+    private bool $disableCache = false;
 
     public function __construct(string $basePath)
     {
@@ -33,17 +34,31 @@ class OutputWriter
         $dateTime = DateTimeHelper::fetchDateTime($row, $dto);
         $name = $this->getFileName($dateTime);
 
-        if (!isset($this->fileResources[$name])) {
-            $fp = new SplFileObject($this->outputPath($name), 'a');
-            $this->fileResources[$name] = $fp;
+        switch (true) {
+            case !$this->disableCache && !isset($this->fileResources[$name]):
+                $fp = new SplFileObject($this->outputPath($name), 'a');
+                $this->fileResources[$name] = $fp;
+                break;
+            case !$this->disableCache && isset($this->fileResources[$name]):
+                $fp = $this->fileResources[$name];
+                break;
+            case $this->disableCache:
+            default:
+                $fp = new SplFileObject($this->outputPath($name), 'a');
+                break;
         }
 
-        $this->fileResources[$name]->fwrite(json_encode($row) . "\n");
+        $fp->fwrite(json_encode($row) . "\n");
     }
 
     public function setArchiveMode(int $archiveMode): void
     {
         $this->archiveMode = $archiveMode;
+    }
+
+    public function disableCache(): void
+    {
+        $this->disableCache = true;
     }
 
     private function getFileName(DateTimeInterface $dateTime): string

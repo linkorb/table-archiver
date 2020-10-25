@@ -9,9 +9,11 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Linkorb\TableArchiver\Dto\ArchiveDto;
 use Linkorb\TableArchiver\Manager\TableArchiver;
+use Linkorb\TableArchiver\Services\OutputWriter;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
@@ -23,10 +25,13 @@ final class TableArchiveCommand extends Command
 
     private Connector $connector;
 
-    public function __construct(TableArchiver $archiver, Connector $connector)
+    private OutputWriter $writer;
+
+    public function __construct(TableArchiver $archiver, Connector $connector, OutputWriter $writer)
     {
         $this->archiver = $archiver;
         $this->connector = $connector;
+        $this->writer = $writer;
 
         parent::__construct();
     }
@@ -50,6 +55,12 @@ final class TableArchiveCommand extends Command
                 'maxStamp',
                 InputArgument::OPTIONAL,
                 'Archive records which older than specified date. Data newer than this date is not archived, and kept in the database'
+            )
+            ->addOption(
+                'no-cache',
+                null,
+                InputOption::VALUE_NONE,
+                'Disables caching of file resource descriptors. Could be used in case of memory limit exceeded / memory leakage. Affects performance'
             );
     }
 
@@ -58,6 +69,10 @@ final class TableArchiveCommand extends Command
         $dto = $this->createDto($input, $output);
 
         $pdo = $this->connector->getPdo($this->connector->getConfig($dto->pdoDsn));
+
+        if ($input->getOption('no-cache')) {
+            $this->writer->disableCache();
+        }
 
         $pdo->beginTransaction();
         $count = $this->archiver->archive($pdo, $dto);

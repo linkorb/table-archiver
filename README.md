@@ -22,6 +22,10 @@ All gzipped [ndjson](http://ndjson.org/) files can be found under `./output` dir
 
 If you want to change threads number you can do that easily by changing `APP_THREADS_NUMBER` in `.env`
 
+With big date ranges it's recommended to run command with disabled (or increased) memory limit 
+(prepended `php -d memory_limit=-1`). If that's not an option you can bypass caching for writers by passing `no-cache`
+option. Be aware that this setting noticeable affects performance.
+
 ### Example:
     
     ./bin/console linkorb:table:archive mysql://root:root@127.0.0.1:3306/test target_table YEAR_MONTH_DAY timestamp 20200101
