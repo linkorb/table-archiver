@@ -71,7 +71,7 @@ final class TableArchiveCommand extends Command
         try {
             $dto = $this->createDto($input, $output);
         } catch (Throwable $e) {
-            $output->write(sprintf('<error>%s</error>', $e->getMessage()));
+            $output->writeln(sprintf('<error>%s</error>', $e->getMessage()));
             return -1;
         }
 

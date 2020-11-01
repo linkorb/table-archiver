@@ -68,12 +68,14 @@
             "@phpcs",
             "@phpcpd",
             "@phpcf",
-            "@security-check"
+            "@security-check",
+            "@phpunit"
         ],
         "phpstan": "./vendor/bin/phpstan analyze --level=5 ./src/",
         "phpcs": "./vendor/bin/phpcs ./src/",
         "phpcpd": "./vendor/bin/phpcpd --fuzzy ./src/",
         "phpcf": "./vendor/bin/phpcf --target 7.1 ./src/",
+        "phpunit": "./vendor/bin/phpunit",
         "security-check": "./vendor/bin/security-checker security:check ./composer.lock"
     },
     "conflict": {

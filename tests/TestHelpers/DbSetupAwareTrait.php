@@ -37,6 +37,11 @@ trait DbSetupAwareTrait
         return 'datetime';
     }
 
+    protected function getMaxTimestampData(): array
+    {
+        return ['2019-11-25 23:59:59', 4];
+    }
+
     private function setUpDb(): PDO
     {
         $pdo = new PDO('sqlite::memory:');
