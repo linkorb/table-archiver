@@ -20,3 +20,25 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
             - '../src/Tests/'
+
+    Linkorb\TableArchiver\Services\Supervisor:
+        arguments:
+            $processingWorkerFactory: !service
+                factory: [ '@Linkorb\TableArchiver\Factory\ArchiverWorkerFactory', 'createFactoryMethod' ]
+                arguments:
+                    - '@Linkorb\TableArchiver\Services\OutputWriter'
+            $threadsNumber: '%env(APP_THREADS_NUMBER)%'
+
+    Linkorb\TableArchiver\Services\OutputWriter:
+        arguments:
+            $basePath: '%kernel.project_dir%/output'
+
+    Linkorb\TableArchiver\Services\OutputArchiver:
+        arguments:
+            $basePath: '%kernel.project_dir%/output'
+
+    Linkorb\TableArchiver\Manager\TableArchiver:
+        arguments:
+            $processingThreadsNumber: '%env(APP_THREADS_NUMBER)%'
+
+    Connector\Connector:
